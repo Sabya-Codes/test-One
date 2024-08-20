@@ -64,6 +64,26 @@ app.get('/api/museums', (req, res) => {
     res.json(results);
   });
 });
+app.get('/api/prices', (req, res) => {
+  const museumName = req.query.museum;
+
+  if (!museumName) {
+    return res.status(400).send({ error: 'museum_name is required' });
+  }
+
+  const query = `
+    SELECT Prices.adult, Prices.child 
+    FROM Prices 
+    JOIN Museums ON Museums.id = Prices.museum_id 
+    WHERE Museums.name = ?`;
+
+  db.query(query, [museumName], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err });
+    }
+    res.json(results[0]); // Assuming there is only one price record per museum
+  });
+});
 
 // Start server
 app.listen(3000, () => {

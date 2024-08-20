@@ -58,8 +58,14 @@ UPDATE museums
 SET city_id = 616
 WHERE id = 2 
 
+
+
 SELECT * FROM cities
 where state_code = "OR"
+
+UPDATE cities
+SET state_name = 'Odisha'
+WHERE state_code = 'OR';
 
 ALTER TABLE Cities ADD state_name VARCHAR(255);
 

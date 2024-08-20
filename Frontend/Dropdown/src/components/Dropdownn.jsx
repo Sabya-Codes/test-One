@@ -5,10 +5,14 @@ const Dropdown = () => {
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
   const [museums, setMuseums] = useState([]);
+  const [prices, setPrices] = useState({ adult: 0, child: 0 });
 
   const [selectedState, setSelectedState] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedMuseum, setSelectedMuseum] = useState('');
+  const [ticketType, setTicketType] = useState('adult');
+  const [ticketCount, setTicketCount] = useState(1);
+  const [totalAmount, setTotalAmount] = useState(0);
 
   // Fetch states on component mount
   useEffect(() => {
@@ -18,17 +22,15 @@ const Dropdown = () => {
   }, []);
 
   // Fetch cities when a state is selected
-  
-useEffect(() => {
-  if (selectedState) {
-    axios.get(`http://localhost:3000/api/cities?state_name=${selectedState}`)
-      .then(response => setCities(response.data))
-      .catch(error => console.error('Error fetching cities:', error));
-  } else {
-    setCities([]);
-  }
-}, [selectedState]);
-
+  useEffect(() => {
+    if (selectedState) {
+      axios.get(`http://localhost:3000/api/cities?state_name=${selectedState}`)
+        .then(response => setCities(response.data))
+        .catch(error => console.error('Error fetching cities:', error));
+    } else {
+      setCities([]);
+    }
+  }, [selectedState]);
 
   // Fetch museums when a city is selected
   useEffect(() => {
@@ -40,6 +42,21 @@ useEffect(() => {
       setMuseums([]);
     }
   }, [selectedCity]);
+
+  // Fetch prices when a museum is selected
+  useEffect(() => {
+    if (selectedMuseum) {
+      axios.get(`http://localhost:3000/api/prices?museum=${selectedMuseum}`)
+        .then(response => setPrices(response.data))
+        .catch(error => console.error('Error fetching prices:', error));
+    }
+  }, [selectedMuseum]);
+
+  // Calculate total amount when ticket type or count changes
+  useEffect(() => {
+    const price = ticketType === 'adult' ? prices.adult : prices.child;
+    setTotalAmount(ticketCount * price);
+  }, [ticketType, ticketCount, prices]);
 
   return (
     <div>
@@ -94,10 +111,35 @@ useEffect(() => {
           ))}
         </select>
       </div>
-      
+
+      {/* Ticket Type Dropdown */}
       <div>
-        <h2>Selected Museum:</h2>
-        <p>{selectedMuseum || "No museum selected"}</p>
+        <label>Select Ticket Type: </label>
+        <select 
+          value={ticketType} 
+          onChange={e => setTicketType(e.target.value)}
+          disabled={!selectedMuseum} // Disable if no museum selected
+        >
+          <option value="adult">Adult</option>
+          <option value="child">Child</option>
+        </select>
+      </div>
+
+      {/* Ticket Count Input */}
+      <div>
+        <label>Number of Tickets: </label>
+        <input 
+          type="number" 
+          min="1"
+          value={ticketCount} 
+          onChange={e => setTicketCount(e.target.value)}
+          disabled={!selectedMuseum} // Disable if no museum selected
+        />
+      </div>
+
+      {/* Total Amount */}
+      <div>
+        <h2>Total Amount: {totalAmount}</h2>
       </div>
     </div>
   );
