@@ -44,8 +44,8 @@ CREATE TABLE Prices (
 );
 INSERT INTO Museums (name, city_id, city_name, state_code, country_code, opening_time, closing_time, latitude, longitude)
 VALUES 
-('Odisha State Museum', 1, 'Bhubaneshwar', 'OR', 'IN', '10:00:00', '17:30:00', 20.2568373264081, 85.84115822721392),
-('Kalabhumi', 1, 'Bhubaneshwar', 'OR', 'IN', '10:00:00', '17:30:00', 20.252136011804804, 85.80729266475592)
+('Odisha State Museum', 616, 'Bhubaneshwar', 'OR', 'IN', '10:00:00', '17:30:00', 20.2568373264081, 85.84115822721392),
+('Kalabhumi', 616, 'Bhubaneshwar', 'OR', 'IN', '10:00:00', '17:30:00', 20.252136011804804, 85.80729266475592)
 
 INSERT INTO Prices (museum_id, child, adult)
 VALUES 

@@ -2,10 +2,10 @@ const express = require('express');
 const mysql = require('mysql2');
 const { State, City } = require('country-state-city');
 
-// Initialize Express
+
 const app = express();
 
-// MySQL Database connection
+
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -13,7 +13,7 @@ const db = mysql.createConnection({
   database: 'Travel_Chatbot'
 });
 
-// Connect to the database
+
 db.connect((err) => {
   if (err) {
     console.error('Error connecting to MySQL:', err);
@@ -22,10 +22,10 @@ db.connect((err) => {
   console.log('Connected to MySQL');
 });
 
-// Function to insert states and cities into the database
+
 async function insertData() {
   try {
-    // Insert States
+  
     const states = State.getStatesOfCountry('IN');
     const stateQuery = `INSERT INTO States (name, state_code, country_code) VALUES ?`;
 
@@ -40,7 +40,7 @@ async function insertData() {
       console.log('States inserted successfully');
     });
 
-    // Insert Cities
+  
     const cities = City.getCitiesOfCountry('IN');
     const cityQuery = `INSERT INTO Cities (name, state_code, country_code, latitude, longitude) VALUES ?`;
 
@@ -62,13 +62,12 @@ async function insertData() {
   }
 }
 
-// Set up a route to trigger the insert operation
 app.get('/insertData', async (req, res) => {
   await insertData();
   res.send('Data inserted into MySQL database');
 });
 
-// Start the Express server
+
 app.listen(3000, () => {
   console.log('Server is running on port 3000');
 });
