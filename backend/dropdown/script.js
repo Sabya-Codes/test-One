@@ -35,16 +35,23 @@ app.get('/api/states', (req, res) => {
 
 // API to fetch cities by state code
 app.get('/api/cities', (req, res) => {
-  const stateCode = req.query.state;
-  const query = 'SELECT * FROM cities WHERE state_code = ?';
-  console.log(query);
-  db.query(query, [stateCode], (err, results) => {
+  const { state_name } = req.query;
+
+  // Make sure state_code is provided
+  if (!state_name) {
+    return res.status(400).send({ error: 'state_code is required' });
+  }
+
+  // Query database for cities with the given state_code
+  db.query('SELECT * FROM Cities WHERE state_name = ?', [state_name], (err, results) => {
     if (err) {
-      return res.status(500).json({ error: err });
+      return res.status(500).send({ error: 'Database query failed' });
     }
-    res.json(results);
+
+    res.send(results);
   });
 });
+
 
 // API to fetch museums by city name
 app.get('/api/museums', (req, res) => {
@@ -60,5 +67,5 @@ app.get('/api/museums', (req, res) => {
 
 // Start server
 app.listen(3000, () => {
-  console.log('Server started on port 5000');
+  console.log('Server started on port 3000');
 });

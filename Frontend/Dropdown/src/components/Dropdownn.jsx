@@ -18,15 +18,17 @@ const Dropdown = () => {
   }, []);
 
   // Fetch cities when a state is selected
-  useEffect(() => {
-    if (selectedState) {
-      axios.get(`http://localhost:3000/api/cities?state=${selectedState}`)
-        .then(response => setCities(response.data))
-        .catch(error => console.error('Error fetching cities:', error));
-    } else {
-      setCities([]);
-    }
-  }, [selectedState]);
+  
+useEffect(() => {
+  if (selectedState) {
+    axios.get(`http://localhost:3000/api/cities?state_name=${selectedState}`)
+      .then(response => setCities(response.data))
+      .catch(error => console.error('Error fetching cities:', error));
+  } else {
+    setCities([]);
+  }
+}, [selectedState]);
+
 
   // Fetch museums when a city is selected
   useEffect(() => {

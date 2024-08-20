@@ -2,16 +2,12 @@ import { useState } from 'react'
 import {BrowserRouter} from 'react-router-dom'
 import './App.css'
 
-import { Dropdown } from './components'
+import  Dropdown  from './components/Dropdownn'
 
 function App() {
   const [count, setCount] = useState(0)
 
-  return (
-  
-<Dropdown />
-   
-  )
+return <Dropdown/>
 }
 
 export default App
