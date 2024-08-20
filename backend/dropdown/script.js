@@ -1,91 +1,102 @@
 const express = require('express');
-const mysql = require('mysql2');
+const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
+const fs = require('fs');
+const {join} = require("node:path");
 
 const app = express();
 app.use(cors()); // Enable CORS for your React frontend
 
-// Database connection
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root', // your DB username
-  password: 'Sabya@123', // your DB password
-  database: 'Travel_Chatbot' // your database name
+
+const db = new sqlite3.Database(':memory:');
+
+
+const loadSQL = (filePath, callback) => {
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            console.error('Failed to read SQL file:', err);
+            return callback(err);
+        }
+        db.exec(data, callback);
+    });
+};
+
+const sqlFilePath = join(__dirname, '../heritage_culture_data/heritage_culture.sql');
+
+loadSQL(sqlFilePath, (err) => {
+    if (err) {
+        console.error('Failed to load SQL data:', err);
+        return;
+    }
+    console.log('SQL data loaded into in-memory database.');
 });
 
-db.connect(err => {
-  if (err) {
-    console.error('Database connection failed:', err.stack);
-    return;
-  }
-  console.log('Connected to database');
-});
 
-// API to fetch all states
 app.get('/api/states', (req, res) => {
-  const query = 'SELECT * FROM states';
-  console.log(query);
-  db.query(query, (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err });
-    }
-    res.json(results);
-  });
+    const query = 'SELECT * FROM states';
+    db.all(query, [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({error: err.message});
+        }
+        res.json(rows);
+    });
 });
 
-// API to fetch cities by state code
+
 app.get('/api/cities', (req, res) => {
-  const { state_name } = req.query;
+    const {state_code} = req.query;
 
-  // Make sure state_code is provided
-  if (!state_name) {
-    return res.status(400).send({ error: 'state_code is required' });
-  }
 
-  // Query database for cities with the given state_code
-  db.query('SELECT * FROM Cities WHERE state_name = ?', [state_name], (err, results) => {
-    if (err) {
-      return res.status(500).send({ error: 'Database query failed' });
+    if (!state_code) {
+        return res.status(400).send({error: 'state_code is required'});
     }
 
-    res.send(results);
-  });
+
+    db.all('SELECT * FROM cities WHERE state_code = ?', [state_code], (err, rows) => {
+        if (err) {
+            return res.status(500).send({error: 'Database query failed'});
+        }
+
+        res.send(rows);
+    });
 });
 
 
-// API to fetch museums by city name
 app.get('/api/museums', (req, res) => {
-  const cityName = req.query.city;
-  const query = 'SELECT * FROM museums WHERE city_name = ?';
-  db.query(query, [cityName], (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err });
-    }
-    res.json(results);
-  });
+    const {city} = req.query;
+    const query = 'SELECT * FROM museums WHERE city_name = ?';
+    db.all(query, [city], (err, rows) => {
+        if (err) {
+            return res.status(500).json({error: err.message});
+        }
+        res.json(rows);
+    });
 });
+
+
 app.get('/api/prices', (req, res) => {
-  const museumName = req.query.museum;
+    const {museum} = req.query;
 
-  if (!museumName) {
-    return res.status(400).send({ error: 'museum_name is required' });
-  }
-
-  const query = `
-    SELECT Prices.adult, Prices.child 
-    FROM Prices 
-    JOIN Museums ON Museums.id = Prices.museum_id 
-    WHERE Museums.name = ?`;
-
-  db.query(query, [museumName], (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err });
+    if (!museum) {
+        return res.status(400).send({error: 'museum_name is required'});
     }
-    res.json(results[0]); // Assuming there is only one price record per museum
-  });
+
+    const query = `
+        SELECT adult_price, child_price, foreigner_price
+        FROM museums
+        WHERE name = ?;`;
+
+    db.get(query, [museum], (err, row) => {
+        if (err) {
+            return res.status(500).json({error: err.message});
+        }
+        if (!row) {
+            return res.status(404).json({error: `Item not found IN database {${museum}}`});
+        }
+        res.json(row); // Assuming there is only one price record per museum
+    });
 });
 
-// Start server
 app.listen(3000, () => {
-  console.log('Server started on port 3000');
+    console.log('Server started on port 3000');
 });
