@@ -8,7 +8,10 @@ import Dropdown from "./components/Dropdownn.jsx";
 function App() {
   const [count, setCount] = useState(0)
 
-return <Dropdown/>
+return (<>
+  <Dropdown/>
+  {/*<Chatbot/>*/}
+</>)
 }
 
 export default App
