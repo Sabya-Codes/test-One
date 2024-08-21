@@ -8,29 +8,9 @@ const path = require("path");
 const app = express();
 app.use(cors()); // Enable CORS for your React frontend
 app.use(express.json());
+const sqlDbPath = join(__dirname, '../heritage_culture_data/heritage_culture.db');
 
-const db = new sqlite3.Database(':memory:');
-
-
-const loadSQL = (filePath, callback) => {
-    fs.readFile(filePath, 'utf8', (err, data) => {
-        if (err) {
-            console.error('Failed to read SQL file:', err);
-            return callback(err);
-        }
-        db.exec(data, callback);
-    });
-};
-
-const sqlFilePath = join(__dirname, '../heritage_culture_data/heritage_culture.sql');
-
-loadSQL(sqlFilePath, (err) => {
-    if (err) {
-        console.error('Failed to load SQL data:', err);
-        return;
-    }
-    console.log('SQL data loaded into in-memory database.');
-});
+const db = new sqlite3.Database(sqlDbPath);
 
 
 app.get('/api/states', (req, res) => {
