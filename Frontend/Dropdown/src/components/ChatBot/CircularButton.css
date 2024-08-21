@@ -1,0 +1,32 @@
+
+.circular-button svg {
+    color: #ffffff;
+}
+
+.circular-button:hover {
+    background-color: #0056b3;
+}
+
+/* CircularButton.css */
+.circular-button {
+    background: linear-gradient(to right, #4a90e2, #9013fe); /* Button background color */
+    border: none;
+    border-radius: 50%; /* Makes the button circular */
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    padding: 0;
+}
+
+.circular-button svg {
+    color: #ffffff; /* Icon color */
+}
+
+.circular-button:hover {
+    background-color: #0056b3; /* Background color on hover */
+}
+

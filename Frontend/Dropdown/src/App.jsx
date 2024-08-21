@@ -2,12 +2,12 @@ import { useState } from 'react'
 import {BrowserRouter} from 'react-router-dom'
 import './App.css'
 
-import  Dropdown  from './components/Dropdownn'
+import  Chatbot  from './components/ChatBot/ChatBot.jsx'
 
 function App() {
   const [count, setCount] = useState(0)
 
-return <Dropdown/>
+return <Chatbot/>
 }
 
 export default App

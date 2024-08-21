@@ -3,10 +3,11 @@ const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const fs = require('fs');
 const {join} = require("node:path");
+const path = require("path");
 
 const app = express();
 app.use(cors()); // Enable CORS for your React frontend
-
+app.use(express.json());
 
 const db = new sqlite3.Database(':memory:');
 
@@ -63,7 +64,7 @@ app.get('/api/cities', (req, res) => {
 
 
 app.get('/api/museums', (req, res) => {
-    const {city} = req.query; 
+    const {city} = req.query;
     const query = 'SELECT * FROM museums WHERE city_name = ?';
     db.all(query, [city], (err, rows) => {
         if (err) {
@@ -94,6 +95,55 @@ app.get('/api/prices', (req, res) => {
             return res.status(404).json({error: `Item not found IN database {${museum}}`});
         }
         res.json(row); // Assuming there is only one price record per museum
+    });
+});
+const conversationFilePath = path.join(__dirname, '../conversation_history.json'); // Adjusted path
+
+app.get('/api/conversation', (req, res) => {
+    fs.readFile(conversationFilePath, 'utf8', (err, data) => {
+        if (err) {
+            return res.status(500).json({error: 'Failed to read conversation history.'});
+        }
+        try {
+            res.json(JSON.parse(data));
+        } catch (parseErr) {
+            res.status(500).json({error: 'Failed to parse conversation history.'});
+        }
+    });
+});
+
+app.post('/api/conversation', (req, res) => {
+    const newConversation = req.body;
+
+    if (!newConversation) {
+        return res.status(400).json({error: 'No conversation data provided.'});
+    }
+
+    // Read existing conversation data
+    fs.readFile(conversationFilePath, 'utf8', (err, data) => {
+        if (err && err.code !== 'ENOENT') { // ENOENT means the file does not exist
+            return res.status(500).json({error: 'Failed to read conversation history.'});
+        }
+
+        let existingConversation = [];
+        if (data) {
+            try {
+                existingConversation = JSON.parse(data);
+            } catch (e) {
+                return res.status(500).json({error: 'Failed to parse existing conversation data.'});
+            }
+        }
+
+        // Append new conversation data
+        const updatedConversation = [...existingConversation, ...newConversation];
+
+        // Write the updated conversation back to the file
+        fs.writeFile(conversationFilePath, JSON.stringify(updatedConversation, null, 2), 'utf8', (err) => {
+            if (err) {
+                return res.status(500).json({error: 'Failed to save conversation history.'});
+            }
+            res.status(200).json({message: 'Conversation history saved successfully.'});
+        });
     });
 });
 
