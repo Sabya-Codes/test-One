@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const Dropdown = () => {
@@ -56,10 +56,12 @@ const Dropdown = () => {
 
     // Calculate total amount when ticket type or count changes
     useEffect(() => {
-        const price = ticketType === 'adult' ? prices.adult : prices.child;
-        setTotalAmount(ticketCount * price);
+        if (prices && prices[ticketType]) {
+            const price = prices[ticketType];
+            setTotalAmount(ticketCount * price);
+        }
     }, [ticketType, ticketCount, prices]);
-
+    
 
     const removeNullValues = (json) => {
         let updatedJson = {};
@@ -74,24 +76,21 @@ const Dropdown = () => {
 
     const getTicketOptions = (data) => {
         const options = Object.keys(data);
-        const f_options = []
+        const f_options = [];
 
         options.forEach(option => {
-
             if (option === 'adult_price') {
-                f_options.push('Adult')
-
+                f_options.push({ label: 'Adult', value: 'adult_price' });
             } else if (option === 'child_price') {
-                f_options.push('Child')
+                f_options.push({ label: 'Child', value: 'child_price' });
             } else if (option === 'foreigner_price') {
-                f_options.push('Foreigner')
+                f_options.push({ label: 'Foreigner', value: 'foreigner_price' });
             }
-
-        })
-
+        });
 
         return f_options;
     };
+
 
     return (
         <div>
@@ -156,13 +155,13 @@ const Dropdown = () => {
                     disabled={!selectedMuseum} // Disable if no museum selected
                 >
                     {getTicketOptions(prices).map(option => (
-                        <option key={option} value={option}>
-                            {option}
+                        <option key={option.value} value={option.value}>
+                            {option.label}
                         </option>
                     ))}
-
                 </select>
             </div>
+
 
             {/* Ticket Count Input */}
             <div>

@@ -57,7 +57,7 @@ VALUES ('Odisha State Museum (OSM)', 1, 'Bhubaneswar', 'OD', 'IN', '10:00:00', '
         85.841158),
        ('Regional Museum of Natural History (RMNH)', 1, 'Bhubaneswar', 'OD', 'IN', '10:00:00', '17:00:00', null, null,
         null, 20.299611,
-        85.832063),
+        85.832063), 
        ('ASI Temple Museum', 1, 'Konark,Puri', 'OD', 'IN', '10:00:00', '17:00:00', 10.00, 10.00, 250.00, 19.8872,
         86.0920),
        ('Museum of Tribal Arts and Artifacts', 1, 'Bhubaneswar', 'OD', 'IN', '10:00:00', '17:00:00', null, null, null,

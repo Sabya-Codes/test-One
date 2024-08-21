@@ -63,7 +63,7 @@ app.get('/api/cities', (req, res) => {
 
 
 app.get('/api/museums', (req, res) => {
-    const {city} = req.query;
+    const {city} = req.query; 
     const query = 'SELECT * FROM museums WHERE city_name = ?';
     db.all(query, [city], (err, rows) => {
         if (err) {
