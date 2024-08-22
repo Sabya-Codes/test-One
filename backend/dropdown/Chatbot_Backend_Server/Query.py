@@ -1,8 +1,6 @@
-import re
-
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
 
 
 class Query:
@@ -14,43 +12,53 @@ class Query:
         return self.db.get_table_info()
 
     def run_query(self, query):
-        return self.db.run(query)
+        # Clean up the query to remove any unwanted characters
+        clean_query = query.strip().strip('```sql').strip('```')
+        return self.db.run(clean_query)
 
     def process_query(self, user_query):
-        prompt_raw = """
+        # Refine the prompt for generating SQL query
+        sql_prompt_raw = """
         Based on the table schema below, write a SQL query that would answer the user's question.
-        Do not write anything other than sql query
+        Output only the SQL query without any additional text.
+
+        Schema:
         {schema}
-        
+
         Question: {question}
         SQL Query:
         """
-        prompt = ChatPromptTemplate.from_template(prompt_raw)
-        prompt.format(schema="my schema", question=user_query)
+        sql_prompt = ChatPromptTemplate.from_template(sql_prompt_raw)
+        formatted_sql_prompt = sql_prompt.format(schema=self.get_schema, question=user_query)
 
+        # Chain for generating the SQL query
         sql_chain = (
                 RunnablePassthrough.assign(schema=self.get_schema)
-                | prompt | self.llm
+                | sql_prompt | self.llm
                 | StrOutputParser()
         )
 
-        template = """
-        Base on the table schema below, question, sql query, and sql response, write a natural language response:
-        Do not write anything other than natural language response
+        # Refine the prompt for generating natural language response
+        response_prompt_raw = """
+        Based on the table schema below, question, SQL query, and SQL response, write a natural language response.
+        Output only the natural language response without any additional text.
+
+        Schema:
         {schema}
-        
+
         Question: {question}
         SQL Query: {query}
-        SQL Response: {response}"""
+        SQL Response: {response}
+        Natural Language Response:
+        """
+        response_prompt = ChatPromptTemplate.from_template(response_prompt_raw)
 
-        prompt2 = ChatPromptTemplate.from_template(template)
-
+        # Chain for generating the natural language response
         full_chain = (
-
                 RunnablePassthrough.assign(query=sql_chain).assign(
                     schema=self.get_schema, response=lambda variables: self.run_query(variables["query"]))
-                | prompt2 | self.llm | StrOutputParser()
-
+                | response_prompt | self.llm | StrOutputParser()
         )
 
+        # Execute the full chain
         return full_chain.invoke({"question": user_query})

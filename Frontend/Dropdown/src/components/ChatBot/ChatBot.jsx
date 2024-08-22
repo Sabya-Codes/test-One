@@ -109,53 +109,63 @@ const Chatbot = () => {
 
         const newConversation = [...conversation, {sender: 'user', text: input}];
         setConversation(newConversation);
-
         try {
-
-
-            const apiUrl = "https://api-inference.huggingface.co/models/google/flan-t5-large";
-            const headers = {
-                "Authorization": "Bearer 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"
-            };
-
-            const conversationHistory = [
-                "User:Keep in mind that you are a e-ticketing chat bot for National Museum tickets of India. " +
-                "Your name is Ticket Aarakshan Mitra. You help people to book their national museum tickets.",
-                "Assistant: Sure, I’d be happy to help!",
-
-            ];
-
-
-            const inputText = [...conversationHistory, `User: ${formatMessage(input)}\nAssistant:`].join("\n");
-
-            const payload = {
-                inputs: inputText
-            };
-
-
-            axios.post(apiUrl, payload, {headers: headers})
-                .then(response => {
-                    console.log(response.data);
-                    setConversation([...newConversation, {sender: 'bot', text: response.data[0].generated_text}]);
-                })
-                .catch(error => {
-                    console.error('Error making request:', error);
-                    setConversation([...newConversation, {sender: 'bot', text: error}]);
-
-                });
-
-            setInput('');
-
-            setIsLoading(false);
-            console.log(inputText);
-
+            const result = await axios.post('http://localhost:5000/chat', {"message": input});
+            setConversation([...newConversation, {sender: 'bot', text: result.data.response}]);
+            setIsLoading(false)
 
         } catch (error) {
-            console.error('Error communicating with the API:', error);
-            setIsLoading(false);
+            console.error('Error:', error);
+            setIsLoading(false)
 
-            setConversation([...newConversation, {sender: 'bot', text: 'Sorry, I encountered an error.'}]);
         }
+
+        // try {
+        //
+        //
+        //     const apiUrl = "https://api-inference.huggingface.co/models/google/flan-t5-large";
+        //     const headers = {
+        //         "Authorization": "Bearer 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"
+        //     };
+        //
+        //     const conversationHistory = [
+        //         "User:Keep in mind that you are a e-ticketing chat bot for National Museum tickets of India. " +
+        //         "Your name is Ticket Aarakshan Mitra. You help people to book their national museum tickets.",
+        //         "Assistant: Sure, I’d be happy to help!",
+        //
+        //     ];
+        //
+        //
+        //     const inputText = [...conversationHistory, `User: ${formatMessage(input)}\nAssistant:`].join("\n");
+        //
+        //     const payload = {
+        //         inputs: inputText
+        //     };
+        //
+        //
+        //     axios.post(apiUrl, payload, {headers: headers})
+        //         .then(response => {
+        //             console.log(response.data);
+        //             setConversation([...newConversation, {sender: 'bot', text: response.data[0].generated_text}]);
+        //         })
+        //         .catch(error => {
+        //             console.error('Error making request:', error);
+        //             setConversation([...newConversation, {sender: 'bot', text: error}]);
+        //
+        //         });
+        //
+        //     setInput('');
+        //
+        //     setIsLoading(false);
+        //     console.log(inputText);
+        //
+        //
+        // } catch (error) {
+        //     console.error('Error communicating with the API:', error);
+        //     setIsLoading(false);
+        //
+        //     setConversation([...newConversation, {sender: 'bot', text: 'Sorry, I encountered an error.'}]);
+        // }
     };
 
     function handleMicrophoneClick() {
