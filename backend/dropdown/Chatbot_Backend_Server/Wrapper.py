@@ -18,7 +18,7 @@ class Wrapper:
         }
         response = requests.post(self.api_url, headers=self.headers, json=payload)
         response.raise_for_status()
-        return response.json()[0]['generated_text']  # Adjust based on API response
+        return response.json()[0]['generated_text']
 
     def llm_type(self) -> str:
         return "HuggingFace API"

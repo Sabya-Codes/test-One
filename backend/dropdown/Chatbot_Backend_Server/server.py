@@ -1,16 +1,19 @@
-from DbManager import DbManager
+import os
 from Query import Query
-from Wrapper import Wrapper
+from langchain_community.utilities import SQLDatabase
+from langchain_cohere import ChatCohere
 
+os.environ[
+    'COHERE_API_KEY'] = 'WxPWfSIHVASNIFMlfnLMrViai4iKklvMl1jvfVu5'
 
 model_name = "google/flan-t5-large"
 api_key = "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"  # Replace with your actual API key
-db_path = '../../heritage_culture_data/heritage_culture.db'
+db_url = 'sqlite:///../../heritage_culture_data/heritage_culture.db'
 
-llm = Wrapper(model_name=model_name, api_key=api_key)
-db_manager = DbManager(db_path)
-query_handler = Query(llm, db_manager)
+llm = ChatCohere()
+db = SQLDatabase.from_uri(db_url)
+query_handler = Query(llm, db)
 
-user_query = "show me all records related to cities"
+user_query = "how many cities are there?"
 result = query_handler.process_query(user_query)
 print(result)
