@@ -14,6 +14,6 @@ llm = ChatCohere()
 db = SQLDatabase.from_uri(db_url)
 query_handler = Query(llm, db)
 
-user_query = "how many cities are there?"
+user_query = "how many states are from odisha?"
 result = query_handler.process_query(user_query)
 print(result)
