@@ -1,16 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { HfInference } from '@huggingface/inference';
+import React, {useEffect, useRef, useState} from 'react';
 import './ChatBot.css';
 import 'antd/dist/reset.css';
-import { Button } from "antd";
+import {Button} from "antd";
 import MicrophoneButton from "./MicrophoneButton.jsx";
 import SendButton from "./SendButton.jsx";
-import { startSpeechRecognition } from './SpeechRecognition';
+import {startSpeechRecognition} from './SpeechRecognition';
 import AlertDialog from "./AlertDialog.jsx";
-import { RingLoader } from 'react-spinners';
-import { notValidPrompts, ticketPrompt, ticketStructurePrompt } from './text_data.js';
+import {RingLoader} from 'react-spinners';
+import {notValidPrompts, ticketPrompt, ticketStructurePrompt} from './text_data.js';
+import axios from "axios";
+import nlp from 'compromise';
 
-const inference = new HfInference("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");
 
 const Chatbot = () => {
     const [input, setInput] = useState('');
@@ -24,23 +24,23 @@ const Chatbot = () => {
     const [enterTicketNumber, setEnterTicketNumber] = useState(false);
 
 
-    useEffect(() => {
-        const fetchConversation = async () => {
-            try {
-                const response = await fetch('http://localhost:3000/api/conversation');
-                const data = await response.json();
-                if (Array.isArray(data)) {
-                    setConversationHistory(data); // Load the conversation history for context
-                } else {
-                    console.error('Expected an array but got:', data);
-                }
-            } catch (error) {
-                console.error('Error fetching conversation history:', error);
-            }
-        };
-
-        fetchConversation();
-    }, []);
+    // useEffect(() => {
+    //     const fetchConversation = async () => {
+    //         try {
+    //             const response = await fetch('http://localhost:3000/api/conversation');
+    //             const data = await response.json();
+    //             if (Array.isArray(data)) {
+    //                 setConversationHistory(data); // Load the conversation history for context
+    //             } else {
+    //                 console.error('Expected an array but got:', data);
+    //             }
+    //         } catch (error) {
+    //             console.error('Error fetching conversation history:', error);
+    //         }
+    //     };
+    //
+    //     fetchConversation();
+    // }, []);
 
 
     useEffect(() => {
@@ -63,7 +63,7 @@ const Chatbot = () => {
         if (welcomeMessage) {
             setConversation(prev => [
                 ...prev,
-                { sender: 'bot', text: welcomeMessage }
+                {sender: 'bot', text: welcomeMessage}
             ]);
         }
     }, [welcomeMessage]);
@@ -74,7 +74,10 @@ const Chatbot = () => {
             messageContainer.scrollTop = messageContainer.scrollHeight;
         }
     }, [conversation]);
-
+    const formatMessage = (message) => {
+        let doc = nlp(message);
+        return doc.text().replace(/^(.)/, (match) => match.toUpperCase());
+    };
     const handleInputChange = (e) => {
         setInput(e.target.value);
     };
@@ -96,7 +99,7 @@ const Chatbot = () => {
                 const ticketStructurePrompts = ticketStructurePrompt;
                 const randomIndex = Math.floor(Math.random() * ticketStructurePrompts.length);
                 const text = ticketStructurePrompts[randomIndex];
-                setConversation([...conversation, { sender: 'bot', text: text }]);
+                setConversation([...conversation, {sender: 'bot', text: text}]);
             }
             setIsLoading(false);
             return;
@@ -104,36 +107,55 @@ const Chatbot = () => {
 
         if (input.trim() === '') return;
 
-        const newConversation = [...conversation, { sender: 'user', text: input }];
+        const newConversation = [...conversation, {sender: 'user', text: input}];
         setConversation(newConversation);
-        setInput('');
 
         try {
-            let botResponse = '';
-            for await (const chunk of inference.chatCompletionStream({
-                model: 'microsoft/DialoGPT-large',
-                messages: [
-                    ...conversationHistory.map((msg) => ({
-                        role: msg.sender,
-                        content: msg.text
-                    })),
-                    { role: 'user', content: input }
-                ],
-                max_tokens: 500
-            })) {
-                botResponse += chunk.choices[0]?.delta?.content || '';
-            }
 
-            setConversation([...newConversation, { sender: 'bot', text: botResponse }]);
+
+            const apiUrl = "https://api-inference.huggingface.co/models/google/flan-t5-large";
+            const headers = {
+                "Authorization": "Bearer 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"
+            };
+
+            const conversationHistory = [
+                "User:Keep in mind that you are a e-ticketing chat bot for National Museum tickets of India. " +
+                "Your name is Ticket Aarakshan Mitra. You help people to book their national museum tickets.",
+                "Assistant: Sure, I’d be happy to help!",
+
+            ];
+
+
+            const inputText = [...conversationHistory, `User: ${formatMessage(input)}\nAssistant:`].join("\n");
+
+            const payload = {
+                inputs: inputText
+            };
+
+
+            axios.post(apiUrl, payload, {headers: headers})
+                .then(response => {
+                    console.log(response.data);
+                    setConversation([...newConversation, {sender: 'bot', text: response.data[0].generated_text}]);
+                })
+                .catch(error => {
+                    console.error('Error making request:', error);
+                    setConversation([...newConversation, {sender: 'bot', text: error}]);
+
+                });
+
+            setInput('');
+
             setIsLoading(false);
+            console.log(inputText);
+
 
         } catch (error) {
             console.error('Error communicating with the API:', error);
             setIsLoading(false);
 
-            setConversation([...newConversation, { sender: 'bot', text: 'Sorry, I encountered an error.' }]);
+            setConversation([...newConversation, {sender: 'bot', text: 'Sorry, I encountered an error.'}]);
         }
-        console.log(conversation);
     };
 
     function handleMicrophoneClick() {
@@ -156,7 +178,7 @@ const Chatbot = () => {
         const text = ticketPrompts[randomIndex];
         setEnterTicketNumber(true);
         setHintText("Enter the ticket number...");
-        setConversation([...conversation, { sender: 'bot', text: text }]);
+        setConversation([...conversation, {sender: 'bot', text: text}]);
     }
 
     function handleMyBookings() {
@@ -171,22 +193,22 @@ const Chatbot = () => {
         // todo
     }
 
-    // Save conversation history to backend
-    useEffect(() => {
-        const saveConversation = async () => {
-            try {
-                await fetch('http://localhost:3000/api/conversation', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(conversation)
-                });
-            } catch (error) {
-                console.error('Error saving conversation history:', error);
-            }
-        };
-
-        saveConversation();
-    }, [conversation]);
+    // // Save conversation history to backend
+    // useEffect(() => {
+    //     const saveConversation = async () => {
+    //         try {
+    //             await fetch('http://localhost:3000/api/conversation', {
+    //                 method: 'POST',
+    //                 headers: {'Content-Type': 'application/json'},
+    //                 body: JSON.stringify(conversation)
+    //             });
+    //         } catch (error) {
+    //             console.error('Error saving conversation history:', error);
+    //         }
+    //     };
+    //
+    //     saveConversation();
+    // }, [conversation]);
 
     return (
         <div className="main-container">
@@ -194,15 +216,16 @@ const Chatbot = () => {
                 <div className="gradient-border">
                     <div className="gradient-border-up">
                         <div className={'ticket-title-div'}>
-                            <img src="/assets/ChatBot/ncsm.png" width={100} height={100} alt="Logo 1" />
+                            <img src="/assets/ChatBot/ncsm.png" width={100} height={100} alt="Logo 1"/>
                             <h3><p>Ticket Aarakshan Mitra</p>टिकट आरक्षण मित्र</h3>
 
-                            <img src="/assets/ChatBot/logo-ministry.png" width={100} height={100} alt="Logo 2" />
+                            <img src="/assets/ChatBot/logo-ministry.png" width={100} height={100} alt="Logo 2"/>
                         </div>
                         <div className={'shortcuts'}>
                             <button onClick={handleTicketStatus} className="shortcut_btn">Check ticket status</button>
                             <button onClick={handleMyBookings} className="shortcut_btn">My bookings</button>
-                            <button onClick={handleCheckAvailability} className="shortcut_btn">Check Availability</button>
+                            <button onClick={handleCheckAvailability} className="shortcut_btn">Check Availability
+                            </button>
                             <button onClick={handleRefundStatus} className="shortcut_btn">Refund Status</button>
                         </div>
                         <div className="scrollable">
@@ -226,28 +249,28 @@ const Chatbot = () => {
                                     />
                                     {!isLoading && (
                                         <Button onClick={handleSendMessage}
-                                            type="primary"
-                                            shape="circle"
-                                            icon={<SendButton style={{ color: 'black' }} />}
-                                            style={{
-                                                backgroundColor: '#ffffff',
-                                                borderColor: '#007bff'
-                                            }}
+                                                type="primary"
+                                                shape="circle"
+                                                icon={<SendButton style={{color: 'black'}}/>}
+                                                style={{
+                                                    backgroundColor: '#ffffff',
+                                                    borderColor: '#007bff'
+                                                }}
                                         />
                                     )}
-                                    {isLoading && (<RingLoader size={32} color={"#8b00f6"} />)}
+                                    {isLoading && (<RingLoader size={32} color={"#8b00f6"}/>)}
                                 </div>
                                 <Button onClick={handleMicrophoneClick}
-                                    type="primary"
-                                    shape="circle"
-                                    icon={<MicrophoneButton style={{ color: 'black' }} />}
-                                    style={{
-                                        backgroundColor: '#ffffff',
-                                        borderColor: '#007bff'
-                                    }}
+                                        type="primary"
+                                        shape="circle"
+                                        icon={<MicrophoneButton style={{color: 'black'}}/>}
+                                        style={{
+                                            backgroundColor: '#ffffff',
+                                            borderColor: '#007bff'
+                                        }}
                                 />
 
-                                <AlertDialog isOpen={isOpen} onClose={() => setIsOpen(false)} />
+                                <AlertDialog isOpen={isOpen} onClose={() => setIsOpen(false)}/>
                             </div>
                         </div>
                     </div>
