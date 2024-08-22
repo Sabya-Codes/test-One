@@ -35,7 +35,8 @@ class Query:
         )
 
         template = """
-        Bases on the table schema below, question, sql query, and sql response, write a natural language response:
+        Base on the table schema below, question, sql query, and sql response, write a natural language response:
+        Do not write anything other than natural language response
         {schema}
         
         Question: {question}
