@@ -1,3 +1,6 @@
+.message-container::-webkit-scrollbar {
+    display: none;
+}
 .main-container {
     display: flex;
     justify-content: center;

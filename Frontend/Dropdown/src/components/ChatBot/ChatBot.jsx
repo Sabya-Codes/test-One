@@ -10,6 +10,7 @@ import {RingLoader} from 'react-spinners';
 import {notValidPrompts, ticketPrompt, ticketStructurePrompt} from './text_data.js';
 import axios from "axios";
 import nlp from 'compromise';
+import SpeakerButton from "./SpeakerButton.jsx";
 
 
 const Chatbot = () => {
@@ -74,6 +75,16 @@ const Chatbot = () => {
             messageContainer.scrollTop = messageContainer.scrollHeight;
         }
     }, [conversation]);
+
+    const speakMessage = (message) => {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        } else {
+            console.warn('Text-to-speech is not supported in this browser.');
+        }
+    };
     const formatMessage = (message) => {
         let doc = nlp(message);
         return doc.text().replace(/^(.)/, (match) => match.toUpperCase());
@@ -85,6 +96,10 @@ const Chatbot = () => {
     function checkValidTicketStructure(e) {
         // todo
         return false;
+    }
+
+    function isQueryQuestion(input) {
+        return true
     }
 
     const handleSendMessage = async () => {
@@ -109,63 +124,70 @@ const Chatbot = () => {
 
         const newConversation = [...conversation, {sender: 'user', text: input}];
         setConversation(newConversation);
-        try {
-            const result = await axios.post('http://localhost:5000/chat', {"message": input});
-            setConversation([...newConversation, {sender: 'bot', text: result.data.response}]);
-            setIsLoading(false)
 
-        } catch (error) {
-            console.error('Error:', error);
-            setIsLoading(false)
+        if (isQueryQuestion(input)) {
+            try {
+                const result = await axios.post('http://localhost:5000/chat', {"message": input});
+                setConversation([...newConversation, {sender: 'bot', text: result.data.response}]);
+                setInput('')
+                setIsLoading(false)
 
+
+            } catch (error) {
+                console.error('Error:', error);
+                setIsLoading(false)
+
+            }
+        } else {
+            try {
+
+
+                const apiUrl = "https://api-inference.huggingface.co/models/google/flan-t5-large";
+                const headers = {
+                    "Authorization": "Bearer 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"
+                };
+
+                const conversationHistory = [
+                    "User:Keep in mind that you are a e-ticketing chat bot for National Museum tickets of India. " +
+                    "Your name is Ticket Aarakshan Mitra. You help people to book their national museum tickets.",
+                    "Assistant: Sure, I’d be happy to help!",
+
+                ];
+
+
+                const inputText = [...conversationHistory, `User: ${formatMessage(input)}\nAssistant:`].join("\n");
+
+                const payload = {
+                    inputs: inputText
+                };
+
+
+                axios.post(apiUrl, payload, {headers: headers})
+                    .then(response => {
+                        console.log(response.data);
+                        setConversation([...newConversation, {sender: 'bot', text: response.data[0].generated_text}]);
+                    })
+                    .catch(error => {
+                        console.error('Error making request:', error);
+                        setConversation([...newConversation, {sender: 'bot', text: error}]);
+
+                    });
+
+                setInput('');
+
+                setIsLoading(false);
+                console.log(inputText);
+
+
+            } catch (error) {
+                console.error('Error communicating with the API:', error);
+                setIsLoading(false);
+
+                setConversation([...newConversation, {sender: 'bot', text: 'Sorry, I encountered an error.'}]);
+            }
         }
 
-        // try {
-        //
-        //
-        //     const apiUrl = "https://api-inference.huggingface.co/models/google/flan-t5-large";
-        //     const headers = {
-        //         "Authorization": "Bearer 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"
-        //     };
-        //
-        //     const conversationHistory = [
-        //         "User:Keep in mind that you are a e-ticketing chat bot for National Museum tickets of India. " +
-        //         "Your name is Ticket Aarakshan Mitra. You help people to book their national museum tickets.",
-        //         "Assistant: Sure, I’d be happy to help!",
-        //
-        //     ];
-        //
-        //
-        //     const inputText = [...conversationHistory, `User: ${formatMessage(input)}\nAssistant:`].join("\n");
-        //
-        //     const payload = {
-        //         inputs: inputText
-        //     };
-        //
-        //
-        //     axios.post(apiUrl, payload, {headers: headers})
-        //         .then(response => {
-        //             console.log(response.data);
-        //             setConversation([...newConversation, {sender: 'bot', text: response.data[0].generated_text}]);
-        //         })
-        //         .catch(error => {
-        //             console.error('Error making request:', error);
-        //             setConversation([...newConversation, {sender: 'bot', text: error}]);
-        //
-        //         });
-        //
-        //     setInput('');
-        //
-        //     setIsLoading(false);
-        //     console.log(inputText);
-        //
-        //
-        // } catch (error) {
-        //     console.error('Error communicating with the API:', error);
-        //     setIsLoading(false);
-        //
-        //     setConversation([...newConversation, {sender: 'bot', text: 'Sorry, I encountered an error.'}]);
-        // }
+
     };
 
     function handleMicrophoneClick() {
@@ -243,7 +265,25 @@ const Chatbot = () => {
                                 {conversation.map((msg, index) => (
                                     <div key={index} className={`message ${msg.sender} message-anim`}>
                                         {msg.text}
+                                        {msg.sender === 'bot' && (
+                                            <Button onClick={() => {
+                                                speakMessage(msg.text)
+                                            }}
+                                                    type="primary"
+                                                    shape="circle"
+                                                    icon={<SpeakerButton
+
+                                                        style={{cursor: 'pointer', marginLeft: '8px'}}
+                                                    />}
+                                                    style={{
+                                                        backgroundColor: '#ffffff',
+                                                        alignSelf:'flex-end'
+                                                    }}
+                                            />
+
+                                        )}
                                     </div>
+
                                 ))}
                             </div>
 
